@@ -2,6 +2,8 @@ import streamlit as st
 from pymongo import MongoClient
 from bson.objectid import ObjectId
 from params import MONGO_URI, DB_NAME, COLLECTION_NAME
+from test import load_skill_terms, create_extractor, extract_skills
+import uuid
 
 # -------------------------------------
 # ----------- CUSTOM STYLE ------------
@@ -152,86 +154,155 @@ elif page == "detail" and doc_id:
 elif page == "new":
     st.subheader("Add New RFP")
 
-    # ----- Config -----
-    st.markdown("### Skills")
-    skill_count = st.number_input(
-        "Number of skills",
-        min_value=1,
-        max_value=50,
-        step=1,
-        value=1,
-        key="skill_count",
-    )
+    # --------------------------
+    # Session state init
+    # --------------------------
+    st.session_state.setdefault("skill_items", [])  # List of {id, name, level}
+    st.session_state.setdefault("language_items", [])  # List of {id, name, level}
 
-    st.markdown("### Languages")
-    language_count = st.number_input(
-        "Number of languages",
-        min_value=0,
-        max_value=20,
-        step=1,
-        value=1,
-        key="language_count",
-    )
+    # --------------------------
+    # Role & company information
+    # --------------------------
+    role = st.text_input("Role Title", key="role")
+    company_name = st.text_input("Company Name", key="company_name")
+    company_city = st.text_input("Localisation", key="company_city")
 
-    # ----- FORM -----
-    with st.form("rfp_form"):
-        role = st.text_input("Role Title")
-        company_name = st.text_input("Company Name")
-        company_city = st.text_input("Company City")
+    # --------------------------
+    # JOB DESCRIPTION + SCAN
+    # --------------------------
+    st.write("### Job Description")
+    job_desc = st.text_area("Job Description (HTML allowed)", key="job_desc")
 
-        job_desc = st.text_area(
-            "Job Description (HTML allowed)",
-            key="job_desc_input"
+    if st.button("Scan skills"):
+        skill_terms = load_skill_terms("skill_db_relax_20.json")
+        extractor = create_extractor(skill_terms)
+        extracted = extract_skills(job_desc, extractor)
+
+        # Ajouter automatiquement les skills extraits à la liste avec des IDs simples
+        st.session_state.skill_items = [
+            {"id": i, "name": skill.strip(), "level": ""}
+            for i, skill in enumerate(extracted)
+            if skill.strip() != ""
+        ]
+        st.rerun()
+
+    # -------------------------------------------------------------------
+    # SKILLS SECTION
+    # -------------------------------------------------------------------
+    st.write("### Skills")
+    
+    st.session_state.setdefault("skill_items", [])
+    
+    for skill_item in st.session_state.skill_items:
+        col1, col2, col3 = st.columns([4, 3, 1])
+        
+        item_id = skill_item["id"]
+        skill_item["name"] = col1.text_input(
+            f"Skill", 
+            value=skill_item["name"], 
+            key=f"skill_text_{item_id}"
+        )
+        
+        level_list = ["", "Beginner", "Intermediate", "Advanced", "Expert"]
+        level_idx = level_list.index(skill_item["level"]) if skill_item["level"] in level_list else 0
+        
+        skill_item["level"] = col2.selectbox(
+            f"Level",
+            level_list,
+            index=level_idx,
+            key=f"skill_level_select_{item_id}"
+        )
+        
+        # Delete immediately when button is clicked
+        if col3.button("-", key=f"delete_skill_btn_{item_id}"):
+            st.session_state.skill_items = [s for s in st.session_state.skill_items if s["id"] != item_id]
+            st.rerun()
+    
+    # ADD SKILL BUTTON
+    if st.button("+ Add Skill", key="add_skill_btn"):
+        next_id = max([s["id"] for s in st.session_state.skill_items], default=-1) + 1
+        st.session_state.skill_items.append({
+            "id": next_id,
+            "name": "",
+            "level": ""
+        })
+        st.rerun()
+
+    # -------------------------------------------------------------------
+    # LANGUAGES SECTION
+    # -------------------------------------------------------------------
+    st.write("### Languages")
+
+    st.session_state.setdefault("language_items", [])
+
+    for lang_item in st.session_state.language_items:
+        col1, col2, col3 = st.columns([4, 3, 1])
+        
+        item_id = lang_item["id"]
+
+        lang_item["name"] = col1.selectbox(
+            f"Language",
+            ["", "English", "French", "Dutch", "German", "Spanish"],
+            index=["", "English", "French", "Dutch", "German", "Spanish"].index(lang_item["name"]) if lang_item["name"] in ["", "English", "French", "Dutch", "German", "Spanish"] else 0,
+            key=f"lang_{item_id}",
         )
 
-        # -------- Skills --------
-        st.markdown("### Skills")
-        skill_names = []
-        skill_levels = []
+        lang_item["level"] = col2.selectbox(
+            f"Level",
+            ["", "NativeOrBilingual", "Fluent", "Professional", "Intermediate", "NiceToHave"],
+            index=["", "NativeOrBilingual", "Fluent", "Professional", "Intermediate", "NiceToHave"].index(lang_item["level"]) if lang_item["level"] in ["", "NativeOrBilingual", "Fluent", "Professional", "Intermediate", "NiceToHave"] else 0,
+            key=f"lang_level_{item_id}",
+        )
 
-        for i in range(skill_count):
-            cols = st.columns([3, 3])
-            skill_names.append(
-                cols[0].text_input(
-                    f"Skill name {i+1}",
-                    key=f"skill_name_{i}"
-                )
-            )
-            skill_levels.append(
-                cols[1].selectbox(
-                    f"Seniority {i+1}",
-                    ["", "Beginner", "Intermediate", "Advanced", "Expert"],
-                    key=f"skill_level_{i}",
-                )
-            )
+        if col3.button("-", key=f"delete_lang_btn_{item_id}"):
+            st.session_state.language_items = [l for l in st.session_state.language_items if l["id"] != item_id]
+            st.rerun()
 
-        # -------- Languages --------
-        st.markdown("---")
-        st.markdown("### Languages")
-        lang_names = []
-        lang_levels = []
+    if st.button("+ Add Language", key="add_lang_btn"):
+        next_id = max([l["id"] for l in st.session_state.language_items], default=-1) + 1
+        st.session_state.language_items.append({
+            "id": next_id,
+            "name": "",
+            "level": ""
+        })
+        st.rerun()
 
-        for i in range(language_count):
-            cols = st.columns([3, 3])
-            lang_names.append(
-                cols[0].selectbox(
-                    f"Language {i+1}",
-                    ["", "English", "French", "Dutch", "German", "Spanish"],
-                    key=f"lang_name_{i}",
-                )
-            )
-            lang_levels.append(
-                cols[1].selectbox(
-                    f"Level {i+1}",
-                    ["", "NativeOrBilingual", "Fluent", "Professional", "Intermediate", "NiceToHave"],
-                    key=f"lang_level_{i}",
-                )
-            )
-
-        submitted = st.form_submit_button("Save")
-
-
+    # -------------------------------------------------------------------
+    # SAVE TO MONGODB
+    # -------------------------------------------------------------------
     st.divider()
 
+    if st.button("💾 Save RFP"):
+        rfp_doc = {
+            "job_id": str(uuid.uuid4()),
+            "role": role,
+            "company_name": company_name,
+            "company_city": company_city,
+            "job_description": job_desc,
+
+            "skills": [
+                {"name": s["name"].strip(), "level": s["level"]}
+                for s in st.session_state.skill_items
+                if s["name"].strip() != ""
+            ],
+
+            "languages": [
+                {"name": l["name"], "level": l["level"]}
+                for l in st.session_state.language_items
+                if l["name"] != ""
+            ]
+        }
+
+        result = collection.insert_one(rfp_doc)
+        st.success(f"RFP saved! ID: {result.inserted_id}")
+
+        # Reset the lists
+        st.session_state.skill_items = []
+        st.session_state.language_items = []
+
+    # -------------------------------------------------------------------
+    # BACK BUTTON
+    # -------------------------------------------------------------------
     if st.button("⬅ Back"):
         go_to("list")
+

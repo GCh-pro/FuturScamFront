@@ -78,17 +78,58 @@ if __name__ == "__main__":
     print(f"🔧 {len(skill_terms)} termes chargés.")
 
     extractor = create_extractor(skill_terms)
-
     texte = """
-<p>NIRAS is de instelling die in België verantwoordelijk is voor het beheer van radioactief afval. Haar belangrijkste doelstelling is mens en milieu, vandaag en op zeer lange termijn, te beschermen tegen de mogelijke risico's die verbonden zijn aan het bestaan van radioactief afval. Wil je meer weten over onze activiteiten? Raadpleeg dan onze website <a href="https://www.niras.be">www.niras.be</a>.<br>&nbsp;<br>Als je wil bijdragen aan onze essentiële en uitdagende maatschappelijke opdracht, willen we je graag ontmoeten!</p>
-<p>Om onze dienst ICT te versterken, zijn wij momenteel op zoek naar een Support/Infra Engineer.<br>&nbsp;<br>UW CONTACTPERSOON&nbsp;<br>Uw contactpersoon bij ProUnity voor deze aanvraag is Sara Ouaich. U kunt haar bereiken per mail via <a>niras@pro-unity.com</a><a>.&nbsp;</a></p>
-<p>&nbsp;</p>
-<p><strong>FUNCTIE</strong><br>Als Support/Infra Engineer ben jij de cruciale schakel tussen onze service desk en de technische teams. Met jouw expertise en servicegerichte aanpak zorg je voor een uitstekende dienstverlening, waarbij je de continuïteit en beveiliging van onze IT-omgeving waarborgt. Binnen ons enthousiaste team werk je actief mee aan nieuwe voorstellen om onze werking te optimaliseren met technologisch uitdagende oplossingen. Deze functie wordt on-site uitgevoerd op onze site te Dessel, met de mogelijkheid tot occasioneel telewerk.</p>
-<p>Deze rol is drieledig:<br>o &nbsp; &nbsp;Service: Je biedt tweedelijns ondersteuning bij complexe IT-vraagstukken en problemen die niet door de eerstelijns support kunnen worden opgelost.<br>o &nbsp; &nbsp;Dagelijks beheer: Je bewaakt en onderhoudt netwerken, servers en platformen om een stabiele en veilige IT-omgeving te garanderen.<br>o &nbsp; &nbsp;Optimalisatie: Je werkt actief mee aan verbeteringen en configuraties met duidelijke deliverables om de IT-omgeving continu te verbeteren.<br>Je functioneert goed binnen een team, maar kan ook zelfstandig en nauwkeurig werken.<br>Je werkt gestructureerd, neemt initiatief en toont flexibiliteit.<br>Je bent communicatief vaardig en houdt altijd de behoeften van de interne klant centraal.<br>Jouw manier van werken sluit naadloos aan bij onze kernwaarden: veiligheid, verantwoordelijkheid, betrouwbaarheid en samenwerking.</p>
-<p><strong>JOUW VERANTWOORDELIJKHEDEN:</strong></p>
-<p>Technische vaardigheden<br>Kan complexe IT-problemen analyseren en oplossen die niet door de 1st line kunnen worden afgehandeld.<br>Degelijke kennis van netwerken (WAN, LAN, VPN, 802.1X, firewall) en systemen (Windows, Linux, Active Directory, M365, virtualisatie, storage)<br>Ervaring met werkstations, servers, randapparatuur en software-installaties/upgrades.<br>Kennis van cybersecurity best practices zoals patchmanagement en endpoint security (Security-bewustzijn).<br>Ervaring met PowerShell om terugkerende taken te automatiseren.<br>&nbsp;<br>Klant- en servicegerichtheid<br>Sterke communicatievaardigheden, kan helder en geduldig uitleggen aan niet-technische gebruikers.<br>Empathie en klantgericht denken, begrijpt de impact van IT-incidenten en stelt de gebruiker gerust.<br>Kan kalm blijven en prioriteiten stellen, ook onder druk.<br>&nbsp;<br>Analytisch en oplossingsgericht denken<br>Kan een degelijke root cause analyse toepassen en storingen systematisch oplossen.<br>Is kritisch, kan zelfstandig werken en out of the box oplossingen voorstellen.<br>&nbsp;<br>Samenwerking en documentatie<br>Werkt goed samen met 1st, 2nd en 3rd line engineers en andere afdelingen.<br>Heeft goeie documentatievaardigheden en houdt IT-processen (aanvragen, incidenten, root-cause analyse, ...) goed bij in een ticketingsysteem.<br>&nbsp;<br>Monitoring en proactief beheer<br>Is vertrouwd met systeem -en netwerkmonitoring tools of ingebouwde monitoring in cloudoplossingen.<br>Kan logs uit Windows Event Viewer, Syslog en andere tools analyseren om proactief issues te signaleren.<br>Houdt prestaties en gebruikstrends in de gaten om toekomstige wijzigingen aan te vragen of te plannen.<br>Reageert op monitoring-alerts en onderneemt proactieve acties om downtime te minimaliseren.</p>
-<p>&nbsp;</p>
-<p><strong>Waarom kiezen voor een opdracht bij NIRAS</strong><br>Als enige beheerder van radioactief afval in België biedt NIRAS je een unieke werkomgeving, waarin al onze medewerkers met passie en professionalisme naar duurzame oplossingen streven. We werken in het belang van de gemeenschap, het milieu en de toekomstige generaties, en met respect voor de regelgeving en de wetenschappelijke vooruitgang. De band die ons bindt is de maatschappelijke meerwaarde van onze opdracht.<br>&nbsp;</p>
+Mission Context
+ 
+The organization is running a datacenter transition program aimed at regaining direct control over its hosting contracts. This requires the controlled relocation of existing infrastructure within current datacenter facilities, with a strong focus on:
+Business continuity
+Technical stability
+A minimal-change approach (only essential updates; replacement of obsolete/unsupported components)
+The scope includes datacenter, networking, network security, servers, storage, and virtualization.
+ 
+Role Purpose
+The Technical Expert supports internal infrastructure teams in:
+Designing, configuring, and validating the technical target solution
+Performing hands-on configuration, testing, and documentation
+Collaborating closely with the internal technical lead to refine the architecture and migration strategy
+👉 Physical installation or equipment movement inside the datacenters is not part of the role.
+ 
+Key Responsibilities
+Design and validate technical solutions for servers, storage, and VMware virtualization
+Support migration preparation and validation testing
+Configure and document all relevant infrastructure components
+Produce high-quality technical documentation:
+solution designs
+configuration guides
+migration procedures
+Advise on backup and recovery strategy for current and future environments
+Ensure efficient knowledge transfer to internal teams
+Contribute to the stability-first, minimal-change philosophy
+ 
+Required Skills & Experience
+✔ Professional Background
+Senior profile with 10+ years in datacenter infrastructure
+✔ Technical Expertise
+VMware: vSphere, vCenter, ESXi
+Storage: Dell PowerStore, NetApp
+Servers: Dell PowerEdge, HP ProLiant
+Backup: StoreOnce (future solution TBD)
+Operating Systems: Windows & Linux
+✔ Core Competencies
+Strong experience in solution design & enterprise implementations
+Excellent analytical, documentation, and troubleshooting abilities
+Ability to operate effectively in a complex, high-stakes program environment
+ 
+Languages
+French: preferred
+English: required
+Dutch: a plus
+Work Mode
+Hybrid (Brussels + remote)
+Occasional visits to datacenter sites
+Assignment Duration
+Until June 2026, with possible extension until end of 2026
+ 
  """
 
     print("🔍 Extraction des compétences...")

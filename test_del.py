@@ -1,45 +1,79 @@
-import streamlit as st
+import requests
+import json
+import jwt
+import params
 
-st.title("Test delete skill by button index")
+# ---------------------
+# Authentification JWT
+# ---------------------
+payload = {
+    "clientToken": params.CLIENT_BM,
+    "clientKey": params.TOKEN_BM,
+    "userToken": params.USER_BM
+}
 
-# -------------------------
-# Session state init
-# -------------------------
-if "skills" not in st.session_state:
-    st.session_state.skills = ["Python", "SQL", "Docker", "AWS"]
+jwt_header_value = jwt.encode(payload, params.TOKEN_BM, algorithm="HS256")
 
-if "to_delete" not in st.session_state:
-    st.session_state.to_delete = None
+url = "https://ui.boondmanager.com/api/opportunities"
 
+headers = {
+    "X-Jwt-Client-BoondManager": jwt_header_value,
+    "Accept": "application/json"
+}
 
-# -------------------------
-# Display skills with delete buttons
-# -------------------------
-st.subheader("Skill list")
+# ---------------------
+# Requête API
+# ---------------------
+response = requests.get(url=url, headers=headers)
 
-for i, skill in enumerate(st.session_state.skills):
-    col1, col2 = st.columns([6, 1])
+print(f"Status Code: {response.status_code}")
 
-    col1.write(f"**{i}. {skill}**")
+# Check JSON
+if not response.headers.get("Content-Type", "").startswith("application/json"):
+    print("Server did NOT return JSON!")
+    print(response.text[:500])
+    exit()
 
-    # Button with index
-    if col2.button("🗑️", key=f"delete_btn_{i}"):
-        st.session_state.to_delete = i
+data = response.json()
 
+# ---------------------
+# Champs à filtrer
+# ---------------------
+fields = [
+    "creationDate",
+    "title",
+    "company",
+    "state",
+    "numberOfActivePositionings",
+    "place",
+    "startDate",
+    "duration",
+    "turnoverWeightedExcludingTax",
+    "mainManager",
+    "turnoverEstimatedExcludingTax",
+    "estimatesExcludingTax",
+    "closingDate",
+    "answerDate",
+    "activityAreas",
+    "expertiseArea",
+    "tools",
+    "origin",
+    "hrManager",
+    "pole",
+    "agency",
+    "updateDate",
+]
 
-# DELETE AFTER LOOP (critical!)
-if st.session_state.to_delete is not None:
-    idx = st.session_state.to_delete
-    del st.session_state.skills[idx]
-    st.session_state.to_delete = None
-    st.rerun()
+# ---------------------
+# Filtrage + affichage
+# ---------------------
+print("\n=== OPPORTUNITES AVEC state = 0 ===\n")
 
+for item in data.get("data", []):
+    attrs = item.get("attributes", {})
 
-# -------------------------
-# Add new skill
-# -------------------------
-st.write("---")
-
-if st.button("+ Add skill"):
-    st.session_state.skills.append(f"New Skill {len(st.session_state.skills)+1}")
-    st.rerun()
+    if attrs.get("state") == 0:
+        print("------ OPPORTUNITY ------")
+        for f in fields:
+            print(f"{f}: {attrs.get(f)}")
+        print("-------------------------\n")

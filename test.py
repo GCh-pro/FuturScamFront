@@ -73,64 +73,14 @@ def extract_skills(text, extractor):
 # ==========================================================
 if __name__ == "__main__":
     print("📌 Chargement des skills...")
-    skill_terms = load_skill_terms("skill_db_relax_20.json")
+    skill_terms = load_skill_terms("skill_db_relax_25.json")
 
     print(f"🔧 {len(skill_terms)} termes chargés.")
 
     extractor = create_extractor(skill_terms)
     texte = """
-Mission Context
- 
-The organization is running a datacenter transition program aimed at regaining direct control over its hosting contracts. This requires the controlled relocation of existing infrastructure within current datacenter facilities, with a strong focus on:
-Business continuity
-Technical stability
-A minimal-change approach (only essential updates; replacement of obsolete/unsupported components)
-The scope includes datacenter, networking, network security, servers, storage, and virtualization.
- 
-Role Purpose
-The Technical Expert supports internal infrastructure teams in:
-Designing, configuring, and validating the technical target solution
-Performing hands-on configuration, testing, and documentation
-Collaborating closely with the internal technical lead to refine the architecture and migration strategy
-👉 Physical installation or equipment movement inside the datacenters is not part of the role.
- 
-Key Responsibilities
-Design and validate technical solutions for servers, storage, and VMware virtualization
-Support migration preparation and validation testing
-Configure and document all relevant infrastructure components
-Produce high-quality technical documentation:
-solution designs
-configuration guides
-migration procedures
-Advise on backup and recovery strategy for current and future environments
-Ensure efficient knowledge transfer to internal teams
-Contribute to the stability-first, minimal-change philosophy
- 
-Required Skills & Experience
-✔ Professional Background
-Senior profile with 10+ years in datacenter infrastructure
-✔ Technical Expertise
-VMware: vSphere, vCenter, ESXi
-Storage: Dell PowerStore, NetApp
-Servers: Dell PowerEdge, HP ProLiant
-Backup: StoreOnce (future solution TBD)
-Operating Systems: Windows & Linux
-✔ Core Competencies
-Strong experience in solution design & enterprise implementations
-Excellent analytical, documentation, and troubleshooting abilities
-Ability to operate effectively in a complex, high-stakes program environment
- 
-Languages
-French: preferred
-English: required
-Dutch: a plus
-Work Mode
-Hybrid (Brussels + remote)
-Occasional visits to datacenter sites
-Assignment Duration
-Until June 2026, with possible extension until end of 2026
- 
- """
+            "description": "Objectifs de la mission\n\nLe Data Modeler interviendra au sein du d\u00e9partement Marketing & Sales d\u2019ENGIE pour concevoir, structurer et maintenir les mod\u00e8les de donn\u00e9es n\u00e9cessaires \u00e0 la bonne exploitation des informations clients, ventes et marketing.\nL\u2019objectif principal est de garantir la qualit\u00e9, la coh\u00e9rence et la disponibilit\u00e9 des donn\u00e9es utilis\u00e9es par les \u00e9quipes business et data (analystes, data engineers, data scientists) afin de soutenir la strat\u00e9gie data-driven du groupe.\n\nEnvironnement / Contexte\n\nP\u00e9rim\u00e8tre : marketing, ventes et exp\u00e9rience client\n\nEnvironnement collaboratif : \u00e9quipe mixte Data Engineers / BI / business analysts\n\nContexte international avec interactions r\u00e9guli\u00e8res avec les \u00e9quipes centrales\n\nPr\u00e9sence sur site \u00e0 Bruxelles 2 jours par semaine, le reste en remote\n\nM\u00e9thodologie de travail agile (scrum ou kanban selon les \u00e9quipes)\n\n\n\nDur\u00e9e / Dispo / Lieu\n\nDur\u00e9e : mission longue (initiale 12 mois renouvelable)\n\nDisponibilit\u00e9 : d\u00e8s que possible\n\nLieu : Bruxelles, 2 jours sur site / 3 jours t\u00e9l\u00e9travail\n\nLangues / TJM cible\n\nFran\u00e7ais ou anglais professionnel obligatoire (environnement bilingue)\n\nTJM maximum : 600 \u20ac / jour",
+            "criteria": "Stack technique / outils\n\nMod\u00e9lisation de donn\u00e9es : Data Vault, Kimball, Inmon, ou \u00e9quivalents\n\nBases de donn\u00e9es : Snowflake, BigQuery, ou SQL Server\n\nLangage de requ\u00eate : SQL avanc\u00e9 (optimisation de requ\u00eates, vues mat\u00e9rialis\u00e9es, contraintes d\u2019int\u00e9grit\u00e9)\n\nOutils de data pipeline / ETL : dbt, Informatica, Talend, ou Azure Data Factory\n\nEnvironnement cloud : Azure (pr\u00e9f\u00e9r\u00e9) ou GCP\n\nDocumentation & data catalog : Collibra, Dataedo, Confluence\n\nComp\u00e9tences attendues\n\nMa\u00eetrise des principes de mod\u00e9lisation relationnelle et dimensionnelle\n\nCapacit\u00e9 \u00e0 traduire les besoins m\u00e9tiers en mod\u00e8les de donn\u00e9es robustes et \u00e9volutifs\n\nConnaissance des standards de gouvernance et de qualit\u00e9 des donn\u00e9es\n\nAptitude \u00e0 collaborer avec les \u00e9quipes m\u00e9tiers et techniques pour assurer la coh\u00e9rence du mod\u00e8le global\n\nExp\u00e9rience dans un contexte data warehouse / marketing data platform\n\nExp\u00e9rience minimum : 4 \u00e0 5 ans sur un poste de Data Modeler ou Data Architect, id\u00e9alement dans un environnement corporate (\u00e9nergie, banque, retail, ou t\u00e9l\u00e9com)."""
 
     print("🔍 Extraction des compétences...")
     skills = extract_skills(texte, extractor)

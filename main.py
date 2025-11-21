@@ -4,6 +4,8 @@ from pymongo import MongoClient
 from bson.objectid import ObjectId
 from typing import List, Optional
 import json
+import asyncio
+from functools import lru_cache
 
 from params import MONGO_URI, DB_NAME, COLLECTION_NAME
 from test import load_skill_terms, create_extractor, extract_skills
@@ -39,29 +41,62 @@ def startup():
 # DATA MODELS
 # ========================
 
-class SkillItem(BaseModel):
+class DailyRate(BaseModel):
+    currency: str = "€"
+    min: Optional[float] = None
+    max: Optional[float] = None
+
+class Conditions(BaseModel):
+    dailyRate: DailyRate = DailyRate()
+    fixedMargin: float = 0.0
+    fromAt: str
+    toAt: str
+    startImmediately: bool = False
+    occupation: str = ""
+
+class Company(BaseModel):
+    city: str
     name: str
+    country: str = ""
+    street: str = ""
+    zipcode: str = ""
+    region: Optional[str] = None
+
+class Skill(BaseModel):
+    name: str
+    seniority: str = ""
+
+class Language(BaseModel):
+    language: str
     level: str = ""
 
-class LanguageItem(BaseModel):
-    name: str
-    level: str = ""
+class JobDocument(BaseModel):
+    company: Company
+    conditions: Conditions
+    serviceProvider: str
+    deadlineAt: str
+    publishedAt: str
+    job_url: str
+    job_id: str
+    job_desc: str
+    roleTitle: str
+    isActive: bool = True
+    skills: List[Skill] = []
+    languages: List[Language] = []
 
-class RFPDocument(BaseModel):
-    role: str
-    company_name: str
-    company_city: str
-    job_description: str
-    skills: List[SkillItem] = []
-    languages: List[LanguageItem] = []
-
-class RFPUpdate(BaseModel):
-    role: Optional[str] = None
-    company_name: Optional[str] = None
-    company_city: Optional[str] = None
-    job_description: Optional[str] = None
-    skills: Optional[List[SkillItem]] = None
-    languages: Optional[List[LanguageItem]] = None
+class JobUpdate(BaseModel):
+    company: Optional[Company] = None
+    conditions: Optional[Conditions] = None
+    serviceProvider: Optional[str] = None
+    deadlineAt: Optional[str] = None
+    publishedAt: Optional[str] = None
+    job_url: Optional[str] = None
+    job_id: Optional[str] = None
+    job_desc: Optional[str] = None
+    roleTitle: Optional[str] = None
+    isActive: Optional[bool] = None
+    skills: Optional[List[Skill]] = None
+    languages: Optional[List[Language]] = None
 
 class SkillExtractionRequest(BaseModel):
     text: str
@@ -75,8 +110,8 @@ class SkillExtractionResponse(BaseModel):
 # ========================
 
 @app.get("/mongodb")
-def get_all_rfps():
-    """Get all RFP documents from MongoDB"""
+def get_all_jobs():
+    """Get all job documents from MongoDB"""
     try:
         collection = get_collection()
         docs = list(collection.find())
@@ -86,12 +121,12 @@ def get_all_rfps():
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/mongodb/{doc_id}")
-def get_rfp(doc_id: str):
-    """Get a specific RFP document by ID"""
+@app.get("/mongodb/{job_id}")
+def get_job(job_id: str):
+    """Get a specific job document by job_id"""
     try:
         collection = get_collection()
-        doc = collection.find_one({"_id": ObjectId(doc_id)})
+        doc = collection.find_one({"job_id": job_id})
         if not doc:
             raise HTTPException(status_code=404, detail="Document not found")
         doc["_id"] = str(doc["_id"])
@@ -100,51 +135,31 @@ def get_rfp(doc_id: str):
         raise HTTPException(status_code=400, detail=str(e))
 
 @app.post("/mongodb")
-def create_rfp(rfp: RFPDocument):
-    """Create a new RFP document"""
+def create_job(job: JobDocument):
+    """Create a new job document"""
     try:
         collection = get_collection()
-        doc = {
-            "role": rfp.role,
-            "company_name": rfp.company_name,
-            "company_city": rfp.company_city,
-            "job_description": rfp.job_description,
-            "skills": [s.dict() for s in rfp.skills],
-            "languages": [l.dict() for l in rfp.languages]
-        }
+        doc = job.model_dump()
         result = collection.insert_one(doc)
         return {
-            "message": "RFP created successfully",
+            "message": "Job posted successfully",
             "id": str(result.inserted_id)
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.put("/mongodb/{doc_id}")
-def update_rfp(doc_id: str, rfp: RFPUpdate):
-    """Update an existing RFP document"""
+@app.put("/mongodb/{job_id}")
+def update_job(job_id: str, job: JobUpdate):
+    """Update an existing job document by job_id"""
     try:
         collection = get_collection()
-        update_data = {}
-        
-        if rfp.role is not None:
-            update_data["role"] = rfp.role
-        if rfp.company_name is not None:
-            update_data["company_name"] = rfp.company_name
-        if rfp.company_city is not None:
-            update_data["company_city"] = rfp.company_city
-        if rfp.job_description is not None:
-            update_data["job_description"] = rfp.job_description
-        if rfp.skills is not None:
-            update_data["skills"] = [s.dict() for s in rfp.skills]
-        if rfp.languages is not None:
-            update_data["languages"] = [l.dict() for l in rfp.languages]
+        update_data = job.model_dump(exclude_unset=True, exclude_none=True)
         
         if not update_data:
             raise HTTPException(status_code=400, detail="No fields to update")
         
         result = collection.update_one(
-            {"_id": ObjectId(doc_id)},
+            {"job_id": job_id},
             {"$set": update_data}
         )
         
@@ -152,24 +167,24 @@ def update_rfp(doc_id: str, rfp: RFPUpdate):
             raise HTTPException(status_code=404, detail="Document not found")
         
         return {
-            "message": "RFP updated successfully",
+            "message": "Job updated successfully",
             "modified_count": result.modified_count
         }
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
-@app.delete("/mongodb/{doc_id}")
-def delete_rfp(doc_id: str):
-    """Delete an RFP document"""
+@app.delete("/mongodb/{job_id}")
+def delete_job(job_id: str):
+    """Delete a job document by job_id"""
     try:
         collection = get_collection()
-        result = collection.delete_one({"_id": ObjectId(doc_id)})
+        result = collection.delete_one({"job_id": job_id})
         
         if result.deleted_count == 0:
             raise HTTPException(status_code=404, detail="Document not found")
         
         return {
-            "message": "RFP deleted successfully",
+            "message": "Job deleted successfully",
             "deleted_count": result.deleted_count
         }
     except Exception as e:
@@ -180,19 +195,29 @@ def delete_rfp(doc_id: str):
 # ========================
 
 @app.post("/skillboy")
-def extract_skills_from_text(request: SkillExtractionRequest) -> SkillExtractionResponse:
-    """Extract skills from text using the skill extractor model"""
+async def extract_skills_from_text(request: SkillExtractionRequest) -> SkillExtractionResponse:
+    """Extract skills from text using the skill extractor model (timeout: 120 seconds)"""
     try:
         if not extractor:
             raise HTTPException(
                 status_code=503,
-                detail="Skill extractor not loaded. Make sure skill_db_relax_20.json exists."
+                detail="Skill extractor not loaded. Make sure skill_db_relax_25.json exists."
             )
         
         if not request.text or not request.text.strip():
             raise HTTPException(status_code=400, detail="Text field cannot be empty")
         
-        skills = extract_skills(request.text, extractor)
+        # Run extraction with 120 second timeout
+        try:
+            skills = await asyncio.wait_for(
+                asyncio.to_thread(extract_skills, request.text, extractor),
+                timeout=120.0
+            )
+        except asyncio.TimeoutError:
+            raise HTTPException(
+                status_code=504,
+                detail="Skill extraction timed out after 120 seconds. Text may be too long or complex."
+            )
         
         return SkillExtractionResponse(
             skills=skills,
@@ -251,4 +276,5 @@ def root():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    # Run with timeout=0 (no timeout) to allow long skill extractions
+    uvicorn.run(app, host="0.0.0.0", port=8000, timeout_keep_alive=120)

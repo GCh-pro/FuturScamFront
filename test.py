@@ -1,7 +1,12 @@
 import json
 import spacy
+import warnings
 from skillNer.skill_extractor_class import SkillExtractor
 from spacy.matcher import PhraseMatcher
+import numpy as np
+
+# Désactiver les warnings de word vectors
+warnings.filterwarnings("ignore", category=UserWarning, module="skillNer.utils")
 
 # ==========================================================
 # Charger ton JSON et extraire toutes les surface forms
@@ -48,7 +53,27 @@ def load_skill_terms(json_path="skill_db_relax_20.json"):
 # Créer le SkillExtractor
 # ==========================================================
 def create_extractor(skill_terms):
-    nlp = spacy.load("en_core_web_sm")
+    # Charger spaCy sans les composants inutiles pour plus de vitesse
+    nlp = spacy.load("en_core_web_sm", disable=["ner"])
+    
+    # Charger les token distances si disponibles
+    try:
+        with open("token_dist.json", "r", encoding="utf-8") as f:
+            token_dist = json.load(f)
+        
+        # Créer des vecteurs simples basés sur la fréquence relative
+        if token_dist:
+            max_freq = max(token_dist.values()) if token_dist else 1
+            for token_str, freq in token_dist.items():
+                if token_str in nlp.vocab:
+                    # Utiliser la fréquence pour injecter une information dans le vecteur
+                    normalized_freq = freq / max_freq if max_freq > 0 else 0.5
+                    nlp.vocab.set_vector(token_str, np.random.rand(96) * normalized_freq)
+    except FileNotFoundError:
+        pass  # token_dist.json non trouvé, continuer sans
+    except Exception as e:
+        print(f"Info: Could not load token_dist.json: {e}")
+    
     # Pass the PhraseMatcher class (SkillExtractor will instantiate it
     # internally with the expected args: e.g. PhraseMatcher(nlp.vocab, attr="LOWER"))
     return SkillExtractor(nlp, skills_db=skill_terms, phraseMatcher=PhraseMatcher)

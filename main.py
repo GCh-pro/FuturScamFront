@@ -103,7 +103,9 @@ class SkillExtractionRequest(BaseModel):
 
 class SkillExtractionResponse(BaseModel):
     skills: List[str]
-    count: int
+    languages: List[str]
+    skills_count: int
+    languages_count: int
 
 # ========================
 # /MONGODB ENDPOINT
@@ -219,9 +221,22 @@ async def extract_skills_from_text(request: SkillExtractionRequest) -> SkillExtr
                 detail="Skill extraction timed out after 120 seconds. Text may be too long or complex."
             )
         
+        # Separate languages from skills
+        languages = []
+        skills_only = []
+        
+        
+        for skill in skills:
+            if skill.lower().endswith("language"):
+                languages.append(skill[:-9])
+            else:
+                skills_only.append(skill)
+        
         return SkillExtractionResponse(
-            skills=skills,
-            count=len(skills)
+            skills=skills_only,
+            languages=languages,
+            skills_count=len(skills_only),
+            languages_count=len(languages)
         )
     except HTTPException:
         raise

@@ -33,7 +33,7 @@ def extract_from_extractor( extractor, text, tresh=0.5):
     # Return a flat structure: text and list of detected skills
     return {"text": res.get('text', text), "results": skills}
 
-def load_skill_terms(json_path="skill_db_relax_20.json"):
+def load_skill_terms(json_path="skill_db_optimized_20.json"):
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 

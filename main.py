@@ -31,7 +31,7 @@ extractor = None
 def startup():
     global skill_terms, extractor
     try:
-        skill_terms = load_skill_terms("skill_db_relax_20.json")
+        skill_terms = load_skill_terms("skill_db_optimized_20.json")
         extractor = create_extractor(skill_terms)
         print("✅ Skill extractor loaded successfully")
     except Exception as e:

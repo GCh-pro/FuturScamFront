@@ -41,7 +41,7 @@ def extract_from_extractor(extractor, text, tresh=0.5):
     # Return a flat structure: text and list of detected skills
     return {"text": res.get('text', text), "results": skills}
 
-def load_skill_terms(json_path="skill_db_relax_20.json"):
+def load_skill_terms(json_path="skill_db_optimized_20.json"):
     with open(json_path, "r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -74,9 +74,10 @@ def create_extractor(skill_terms):
             max_freq = max(token_dist.values()) if token_dist else 1
             for token_str, freq in token_dist.items():
                 if token_str in nlp.vocab:
-                    # Utiliser la fréquence pour injecter une information dans le vecteur
-                    normalized_freq = freq / max_freq if max_freq > 0 else 0.5
-                    nlp.vocab.set_vector(token_str, np.random.rand(96) * normalized_freq)
+                    rng = np.random.default_rng(seed=hash(token_str) % (2**32))
+                    vec = rng.normal(0, 1, 96)
+                    vec /= np.linalg.norm(vec)
+                    nlp.vocab.set_vector(token_str, vec)
     except FileNotFoundError:
         pass  # token_dist.json non trouvé, continuer sans
     except Exception as e:
@@ -106,7 +107,7 @@ def extract_skills(text, extractor):
 # ==========================================================
 if __name__ == "__main__":
     print("📌 Chargement des skills...")
-    skill_terms = load_skill_terms("skill_db_relax_20.json")
+    skill_terms = load_skill_terms("skill_db_optimized_20.json")
 
     print(f"🔧 {len(skill_terms)} termes chargés.")
 

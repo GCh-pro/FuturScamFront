@@ -64,26 +64,26 @@ class Company(BaseModel):
 
 class Skill(BaseModel):
     name: str
-    seniority: str = ""
+    seniority: Optional[str] = ""
 
 class Language(BaseModel):
     language: str
-    level: str = ""
+    level: Optional[str] = ""
 
 class JobDocument(BaseModel):
     company: Company
     conditions: Conditions
-    serviceProvider: str
+    serviceProvider: Optional[str] = ""
     deadlineAt: str
     publishedAt: str
-    metadata: dict
-    job_url: str
+    metadata: Optional[dict] = None
+    job_url: Optional[str] = None
     job_id: str
     job_desc: str
     roleTitle: str
     isActive: bool = True
-    skills: List[Skill] = []
-    languages: List[Language] = []
+    skills: Optional[List[Skill]] = []
+    languages: Optional[List[Language]] = []
 
 class JobUpdate(BaseModel):
     company: Optional[Company] = None

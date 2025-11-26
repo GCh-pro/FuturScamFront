@@ -65,19 +65,24 @@ def create_extractor(skill_terms):
     nlp = spacy.load("en_core_web_sm", disable=["ner"])
     
     # Charger les token distances si disponibles
-    try:
-        with open("token_dist.json", "r", encoding="utf-8") as f:
-            token_dist = json.load(f)
-        
-        # Créer des vecteurs simples basés sur la fréquence relative
-        if token_dist:
-            max_freq = max(token_dist.values()) if token_dist else 1
-            for token_str, freq in token_dist.items():
-                if token_str in nlp.vocab:
-                    rng = np.random.default_rng(seed=hash(token_str) % (2**32))
-                    vec = rng.normal(0, 1, 96)
-                    vec /= np.linalg.norm(vec)
-                    nlp.vocab.set_vector(token_str, vec)
+    with open("token_dist.json", "r", encoding="utf-8") as f:
+        token_dist = json.load(f)
+
+    VECTOR_SIZE = 96  # Tu peux adapter ici si nécessaire
+
+    if token_dist:
+        for token_str in token_dist.keys():
+            if token_str in nlp.vocab:
+                # Seed stable basé sur le token → reproductible même si ordre différent
+                seed = hash(token_str) & 0xffffffff  
+                rng = np.random.default_rng(seed)
+
+                # Initialisation normalisée (plus propre qu'un random brut)
+                vec = rng.normal(0, 1, VECTOR_SIZE)
+                vec /= np.linalg.norm(vec)  # normalisation L2
+
+                nlp.vocab.set_vector(token_str, vec)
+
     except FileNotFoundError:
         pass  # token_dist.json non trouvé, continuer sans
     except Exception as e:

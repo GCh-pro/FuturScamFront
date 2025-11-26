@@ -11,24 +11,32 @@ warnings.filterwarnings("ignore", category=UserWarning, module="skillNer.utils")
 # ==========================================================
 # Charger ton JSON et extraire toutes les surface forms
 # ==========================================================
-def extract_from_extractor( extractor, text, tresh=0.5):
+def extract_from_extractor(extractor, text, tresh=0.5):
     # `extractor.annotate` expects a raw string. Ensure we pass a string.
     res = extractor.annotate(text, tresh=tresh)
 
     skills = []
+    
+    # Handle full_matches safely
     for m in res['results'].get('full_matches', []):
-        skills.append({
-            "skill_id": m['skill_id'],
-            "skill_name": extractor.skills_db[m['skill_id']]['skill_name'],
-            "type": "full",
-        })
+        skill_id = m.get('skill_id')
+        if skill_id and skill_id in extractor.skills_db:
+            skills.append({
+                "skill_id": skill_id,
+                "skill_name": extractor.skills_db[skill_id]['skill_name'],
+                "type": "full",
+            })
+    
+    # Handle ngram_scored safely
     for m in res['results'].get('ngram_scored', []):
-        skills.append({
-            "skill_id": m['skill_id'],
-            "skill_name": extractor.skills_db[m['skill_id']]['skill_name'],
-            "type": "ngram",
-            "score": m.get("score", 1),
-        })
+        skill_id = m.get('skill_id')
+        if skill_id and skill_id in extractor.skills_db:
+            skills.append({
+                "skill_id": skill_id,
+                "skill_name": extractor.skills_db[skill_id]['skill_name'],
+                "type": "ngram",
+                "score": m.get("score", 1),
+            })
 
     # Return a flat structure: text and list of detected skills
     return {"text": res.get('text', text), "results": skills}
@@ -98,7 +106,7 @@ def extract_skills(text, extractor):
 # ==========================================================
 if __name__ == "__main__":
     print("📌 Chargement des skills...")
-    skill_terms = load_skill_terms("skill_db_relax_25.json")
+    skill_terms = load_skill_terms("skill_db_optimized_20.json")
 
     print(f"🔧 {len(skill_terms)} termes chargés.")
 

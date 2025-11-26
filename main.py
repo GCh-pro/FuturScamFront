@@ -76,6 +76,7 @@ class JobDocument(BaseModel):
     serviceProvider: str
     deadlineAt: str
     publishedAt: str
+    metadata: dict
     job_url: str
     job_id: str
     job_desc: str
@@ -90,6 +91,7 @@ class JobUpdate(BaseModel):
     serviceProvider: Optional[str] = None
     deadlineAt: Optional[str] = None
     publishedAt: Optional[str] = None
+    metadata: Optional[dict] = None
     job_url: Optional[str] = None
     job_id: Optional[str] = None
     job_desc: Optional[str] = None
@@ -225,10 +227,18 @@ async def extract_skills_from_text(request: SkillExtractionRequest) -> SkillExtr
         languages = []
         skills_only = []
         
+        # Handle empty results safely
+        if not skills:
+            return SkillExtractionResponse(
+                skills=[],
+                languages=[],
+                skills_count=0,
+                languages_count=0
+            )
         
         for skill in skills:
             if skill.lower().endswith("language"):
-                languages.append(skill[:-9])
+                languages.append(skill)
             else:
                 skills_only.append(skill)
         
@@ -291,5 +301,5 @@ def root():
 
 if __name__ == "__main__":
     import uvicorn
-    # Run with timeout=0 (no timeout) to allow long skill extractions
+    
     uvicorn.run(app, host="0.0.0.0", port=8000, timeout_keep_alive=120)

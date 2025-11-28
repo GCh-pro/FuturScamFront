@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, File, Form, UploadFile
 from pydantic import BaseModel
 from pymongo import MongoClient
 from bson.objectid import ObjectId
@@ -6,9 +6,12 @@ from typing import List, Optional
 import json
 import asyncio
 from functools import lru_cache
+import os
+import tempfile
 
 from params import MONGO_URI, DB_NAME, COLLECTION_NAME
 from test import load_skill_terms, create_extractor, extract_skills
+from mail_sender import MailSender
 
 # Initialize FastAPI app
 app = FastAPI(
@@ -262,6 +265,116 @@ def skillboy_health():
     }
 
 # ========================
+# MAIL ENDPOINT
+# ========================
+
+# Initialize mail sender (lazy loading on first use)
+mail_sender_instance = None
+
+def get_mail_sender() -> MailSender:
+    """Get or initialize the mail sender with application authentication."""
+    global mail_sender_instance
+    
+    if mail_sender_instance is None:
+        from params import AZURE_CLIENT, AZURE_URI, AZURE_SECRET, AZURE_MAILBOX
+        scopes = ["https://graph.microsoft.com/.default"]
+        mail_sender_instance = MailSender(
+            client_id=AZURE_CLIENT,
+            authority=AZURE_URI,
+            client_secret=AZURE_SECRET,
+            mailbox_email=AZURE_MAILBOX,
+            scopes=scopes
+        )
+        mail_sender_instance.authenticate()
+    
+    return mail_sender_instance
+
+@app.post("/mail")
+async def send_email(
+    to_addresses: str = Form(..., description="Comma-separated list of recipient email addresses"),
+    subject: str = Form(..., description="Email subject"),
+    body: str = Form(..., description="Email body (HTML or plain text)"),
+    cc_addresses: Optional[str] = Form(None, description="Comma-separated list of CC addresses"),
+    bcc_addresses: Optional[str] = Form(None, description="Comma-separated list of BCC addresses"),
+    is_html: bool = Form(True, description="Whether body is HTML (default True)"),
+    attachments: Optional[List[UploadFile]] = File(None, description="Files to attach (PDF, PNG, JPEG, etc.)")
+) -> dict:
+    """
+    Send an email with optional attachments.
+    
+    Parameters:
+    - to_addresses: Comma-separated email addresses (required)
+    - subject: Email subject (required)
+    - body: Email body content (required)
+    - cc_addresses: Comma-separated CC addresses (optional)
+    - bcc_addresses: Comma-separated BCC addresses (optional)
+    - is_html: Whether body is HTML formatted (optional, default True)
+    - attachments: Files to attach (optional, supports PDF, PNG, JPEG, etc.)
+    
+    Returns:
+    - JSON response with status and message
+    """
+    try:
+        # Parse email addresses
+        to_list = [addr.strip() for addr in to_addresses.split(",") if addr.strip()]
+        if not to_list:
+            raise HTTPException(status_code=400, detail="At least one recipient email is required")
+        
+        cc_list = [addr.strip() for addr in cc_addresses.split(",") if addr.strip()] if cc_addresses else None
+        bcc_list = [addr.strip() for addr in bcc_addresses.split(",") if addr.strip()] if bcc_addresses else None
+        
+        # Save uploaded files to temporary location
+        temp_files = []
+        try:
+            if attachments:
+                for file in attachments:
+                    # Create temporary file
+                    with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(file.filename)[1]) as tmp_file:
+                        content = await file.read()
+                        tmp_file.write(content)
+                        temp_files.append(tmp_file.name)
+            
+            # Get mail sender and send email
+            sender = get_mail_sender()
+            success = sender.send_email(
+                to_addresses=to_list,
+                subject=subject,
+                body=body,
+                attachments=temp_files if temp_files else None,
+                cc_addresses=cc_list,
+                bcc_addresses=bcc_list,
+                is_html=is_html
+            )
+            
+            if success:
+                return {
+                    "status": "success",
+                    "message": f"Email sent successfully to {', '.join(to_list)}",
+                    "recipients": {
+                        "to": to_list,
+                        "cc": cc_list,
+                        "bcc": bcc_list
+                    },
+                    "attachments_count": len(temp_files)
+                }
+            else:
+                raise HTTPException(status_code=500, detail="Failed to send email")
+        
+        finally:
+            # Clean up temporary files
+            for temp_file in temp_files:
+                try:
+                    os.remove(temp_file)
+                except Exception as e:
+                    print(f"[WARN] Error deleting temp file {temp_file}: {e}")
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        print(f"[ERROR] Unexpected error: {e}")
+        raise HTTPException(status_code=500, detail=f"Error sending email: {str(e)}")
+
+# ========================
 # HEALTH CHECK
 # ========================
 
@@ -285,6 +398,7 @@ def root():
         "version": "1.0.0",
         "endpoints": {
             "health": "GET /health - API health check",
+            "mail": "POST /mail - Send email with attachments",
             "mongodb": {
                 "get_all": "GET /mongodb - Get all RFPs",
                 "get_one": "GET /mongodb/{doc_id} - Get specific RFP",

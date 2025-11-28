@@ -6,3 +6,6 @@ spacy==3.8.10
 en_core_web_sm
 torch
 pydantic
+msal
+requests
+python-multipart

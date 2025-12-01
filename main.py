@@ -26,6 +26,11 @@ def get_collection():
     db = client[DB_NAME]
     return db[COLLECTION_NAME]
 
+def get_users_collection():
+    client = MongoClient(MONGO_URI)
+    db = client[DB_NAME]
+    return db["Users"]
+
 # Load skill extractor once at startup
 skill_terms = None
 extractor = None
@@ -112,6 +117,22 @@ class SkillExtractionResponse(BaseModel):
     skills_count: int
     languages_count: int
 
+class User(BaseModel):
+    company: str
+    mail: str
+    name: str
+    role: str
+    password: str
+    id: str
+
+class UserUpdate(BaseModel):
+    company: Optional[str] = None
+    mail: Optional[str]
+    name: Optional[str] = None
+    role: Optional[str] = None
+    password: Optional[str] = None
+    id: Optional[str] = None
+
 # ========================
 # /MONGODB ENDPOINT
 # ========================
@@ -192,6 +213,101 @@ def delete_job(job_id: str):
         
         return {
             "message": "Job deleted successfully",
+            "deleted_count": result.deleted_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ========================
+# /USERS ENDPOINT
+# ========================
+
+@app.get("/users")
+def get_all_users():
+    """Get all user documents from MongoDB"""
+    try:
+        collection = get_users_collection()
+        docs = list(collection.find())
+        for doc in docs:
+            doc["_id"] = str(doc["_id"])
+        return {"count": len(docs), "data": docs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/users/{user_id}")
+def get_user(user_id: str):
+    """Get a specific user document by id"""
+    try:
+        collection = get_users_collection()
+        doc = collection.find_one({"id": user_id})
+        if not doc:
+            raise HTTPException(status_code=404, detail="User not found")
+        doc["_id"] = str(doc["_id"])
+        return doc
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/users")
+def create_user(user: User):
+    """Create a new user document"""
+    try:
+        collection = get_users_collection()
+        
+        # Check if user with this id already exists
+        existing_user = collection.find_one({"id": user.id})
+        if existing_user:
+            raise HTTPException(status_code=400, detail="User with this id already exists")
+        
+        doc = user.model_dump()
+        result = collection.insert_one(doc)
+        return {
+            "message": "User created successfully",
+            "id": str(result.inserted_id)
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/users/{user_id}")
+def update_user(user_id: str, user: UserUpdate):
+    """Update an existing user document by id"""
+    try:
+        collection = get_users_collection()
+        update_data = user.model_dump(exclude_unset=True, exclude_none=True)
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No fields to update")
+        
+        result = collection.update_one(
+            {"id": user_id},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "message": "User updated successfully",
+            "modified_count": result.modified_count
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/users/{user_id}")
+def delete_user(user_id: str):
+    """Delete a user document by id"""
+    try:
+        collection = get_users_collection()
+        result = collection.delete_one({"id": user_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="User not found")
+        
+        return {
+            "message": "User deleted successfully",
             "deleted_count": result.deleted_count
         }
     except Exception as e:

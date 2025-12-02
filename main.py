@@ -31,6 +31,11 @@ def get_users_collection():
     db = client[DB_NAME]
     return db["Users"]
 
+def get_staging_collection():
+    client = MongoClient(MONGO_URI)
+    db = client[DB_NAME]
+    return db["StagingRFP"]
+
 # Load skill extractor once at startup
 skill_terms = None
 extractor = None
@@ -213,6 +218,91 @@ def delete_job(job_id: str):
         
         return {
             "message": "Job deleted successfully",
+            "deleted_count": result.deleted_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+# ========================
+# /STAGING ENDPOINT
+# ========================
+
+@app.get("/staging")
+def get_all_staging_jobs():
+    """Get all staging job documents from MongoDB"""
+    try:
+        collection = get_staging_collection()
+        docs = list(collection.find())
+        for doc in docs:
+            doc["_id"] = str(doc["_id"])
+        return {"count": len(docs), "data": docs}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/staging/{job_id}")
+def get_staging_job(job_id: str):
+    """Get a specific staging job document by job_id"""
+    try:
+        collection = get_staging_collection()
+        doc = collection.find_one({"job_id": job_id})
+        if not doc:
+            raise HTTPException(status_code=404, detail="Document not found")
+        doc["_id"] = str(doc["_id"])
+        return doc
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.post("/staging")
+def create_staging_job(job: JobDocument):
+    """Create a new staging job document"""
+    try:
+        collection = get_staging_collection()
+        doc = job.model_dump()
+        result = collection.insert_one(doc)
+        return {
+            "message": "Staging job posted successfully",
+            "id": str(result.inserted_id)
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.put("/staging/{job_id}")
+def update_staging_job(job_id: str, job: JobUpdate):
+    """Update an existing staging job document by job_id"""
+    try:
+        collection = get_staging_collection()
+        update_data = job.model_dump(exclude_unset=True, exclude_none=True)
+        
+        if not update_data:
+            raise HTTPException(status_code=400, detail="No fields to update")
+        
+        result = collection.update_one(
+            {"job_id": job_id},
+            {"$set": update_data}
+        )
+        
+        if result.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        return {
+            "message": "Staging job updated successfully",
+            "modified_count": result.modified_count
+        }
+    except Exception as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+@app.delete("/staging/{job_id}")
+def delete_staging_job(job_id: str):
+    """Delete a staging job document by job_id"""
+    try:
+        collection = get_staging_collection()
+        result = collection.delete_one({"job_id": job_id})
+        
+        if result.deleted_count == 0:
+            raise HTTPException(status_code=404, detail="Document not found")
+        
+        return {
+            "message": "Staging job deleted successfully",
             "deleted_count": result.deleted_count
         }
     except Exception as e:

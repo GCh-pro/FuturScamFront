@@ -91,6 +91,8 @@ class JobDocument(BaseModel):
     publishedAt: str
     metadata: Optional[dict] = None
     job_url: Optional[str] = None
+    remoteOption: Optional[str] = None
+    seniority: Optional[str] = None
     job_id: str
     job_desc: str
     roleTitle: str
@@ -106,6 +108,8 @@ class JobUpdate(BaseModel):
     publishedAt: Optional[str] = None
     metadata: Optional[dict] = None
     job_url: Optional[str] = None
+    remoteOption: Optional[str] = None
+    seniority: Optional[str] = None
     job_id: Optional[str] = None
     job_desc: Optional[str] = None
     roleTitle: Optional[str] = None

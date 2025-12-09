@@ -89,7 +89,7 @@ class JobDocument(BaseModel):
     serviceProvider: Optional[str] = ""
     deadlineAt: str
     publishedAt: str
-    metadata: Optional[dict] = None
+    metadata: Optional[List[dict]] = None
     job_url: Optional[str] = None
     remoteOption: Optional[str] = None
     seniority: Optional[str] = None
@@ -106,7 +106,7 @@ class JobUpdate(BaseModel):
     serviceProvider: Optional[str] = None
     deadlineAt: Optional[str] = None
     publishedAt: Optional[str] = None
-    metadata: Optional[dict] = None
+    metadata: Optional[List[dict]] = None
     job_url: Optional[str] = None
     remoteOption: Optional[str] = None
     seniority: Optional[str] = None

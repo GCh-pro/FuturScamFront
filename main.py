@@ -99,6 +99,7 @@ class JobDocument(BaseModel):
     isActive: bool = True
     skills: Optional[List[Skill]] = []
     languages: Optional[List[Language]] = []
+    RFP_type: Optional[str] = None
 
 class JobUpdate(BaseModel):
     company: Optional[Company] = None
@@ -116,6 +117,7 @@ class JobUpdate(BaseModel):
     isActive: Optional[bool] = None
     skills: Optional[List[Skill]] = None
     languages: Optional[List[Language]] = None
+    RFP_type: Optional[str] = None
 
 class SkillExtractionRequest(BaseModel):
     text: str

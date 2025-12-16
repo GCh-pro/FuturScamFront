@@ -133,6 +133,7 @@ class User(BaseModel):
     mail: str
     name: str
     role: str
+    metadata: Optional[List[dict]]
     password: str
     id: str
 
@@ -141,6 +142,7 @@ class UserUpdate(BaseModel):
     mail: Optional[str]
     name: Optional[str] = None
     role: Optional[str] = None
+    metadata: Optional[List[dict]] = None
     password: Optional[str] = None
     id: Optional[str] = None
 
